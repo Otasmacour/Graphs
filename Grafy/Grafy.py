@@ -1,4 +1,11 @@
-
+def PrintResultOfMinimumSpanningTree(edges, algorithmName):
+    totalLength = 0
+    print("The edges of the minimum spanning tree by "+algorithmName+" are:")
+    for edge in edges:
+        print("from "+str(edge.vertex1)+" to "+str(edge.vertex2)+", length: "+str(edge.length))
+        totalLength += edge.length
+    print("With a total length of "+str(totalLength))
+    print()
 
 def PrintGraph(graph):
     for node in graph.nodes:
@@ -73,7 +80,7 @@ class PriorityQueueByDepths():
             self.start = self.start.next
             return node
 
-class PriorityQueue():
+class PriorityQueueShortestEdges():
 
     def __init__(self):
         self.start = None
@@ -83,7 +90,7 @@ class PriorityQueue():
         if(self.start != None):
             return True
         return False
-     
+    
     def Enqueue(self, value):
         node = QueueNode()
         node.value = value
@@ -112,6 +119,14 @@ class PriorityQueue():
                     current = current.next
                 node.next = current.next
                 current.next = node
+    
+    def GetAllOfTheEdges(self):
+        edges = []
+        current = self.start
+        while(current != None):
+            edges.append(current.value)
+            current = current.next
+        return(edges)
 
     def Dequeue(self):
         if(self.start == self.end):
@@ -128,14 +143,20 @@ class Node():
 
     def __init__(self, index):
         self.index = index
-        self.adjacentVerticesAndDistances = {}
+        self.edges = []
 
 class Edge():
     
-    def __init__(self, vertex1, vertex2, length):
+    def __init__(self, vertex1, vertex2, length): #These vertices are their indices
         self.vertex1 = vertex1
         self.vertex2 = vertex2
         self.length = length
+
+    def TheIndexOfTheOtherVertex(self, vertex):
+        if(self.vertex1 == vertex):
+            return self.vertex2
+        else:
+            return self.vertex1
 
 class BipartGraph:
 
@@ -148,8 +169,8 @@ class BipartGraph:
 class GenericGraph:
     
     def __init__(self):
-        self.nodes = []
-        self.edges = PriorityQueue()
+        self.vertices = []
+        self.edges = PriorityQueueShortestEdges()
 
     def CreateGraph(self, inputFileName):
         lines = open("GenericInput.txt")
@@ -157,38 +178,40 @@ class GenericGraph:
         numberOfVertices, lines = NextDecimalNumber(lines)
         for i in range(numberOfVertices):
             node = Node(i)
-            self.nodes.append(node)
+            self.vertices.append(node)
         numberOfEdges, lines = NextDecimalNumber(lines)
         for i in range(numberOfEdges):
             vertex1Index, lines = NextDecimalNumber(lines)
             vertex2Index, lines = NextDecimalNumber(lines)
             edgeLength, lines = NextDecimalNumber(lines)
-            self.nodes[vertex1Index].adjacentVerticesAndDistances[vertex2Index] = edgeLength
-            self.nodes[vertex2Index].adjacentVerticesAndDistances[vertex1Index] = edgeLength
             edge = Edge(vertex1Index, vertex2Index, edgeLength)
+            self.vertices[vertex1Index].edges.append(edge)
+            self.vertices[vertex2Index].edges.append(edge)
             self.edges.Enqueue(edge)
 
     def Dijkstra(self, indexOfStart, indexOfDestination): #Returns the length and vertices of the shortest path
-        queue = PriorityQueue()
+        queue = PriorityQueueByDepths()
         depths = {indexOfStart:0}
-        queue.Enqueue(self.nodes[indexOfStart], depths)
+        queue.Enqueue(self.vertices[indexOfStart], depths)
         while(queue.NotEmpty()):
-            node = queue.Dequeue()
-            for adjacentIndex in node.adjacentVerticesAndDistances:
+            vertex = queue.Dequeue()
+            for edge in vertex.edges:
+                adjacentIndex = edge.TheIndexOfTheOtherVertex(vertex.index)
                 if(adjacentIndex not in depths):
-                    depths[adjacentIndex] = depths[node.index] + node.adjacentVerticesAndDistances[adjacentIndex]
-                    queue.Enqueue(self.nodes[adjacentIndex], depths)
-                elif(depths[adjacentIndex] > depths[node.index] + node.adjacentVerticesAndDistances[adjacentIndex]):
-                    depths[adjacentIndex] = depths[node.index] + node.adjacentVerticesAndDistances[adjacentIndex]
-                    queue.Enqueue(self.nodes[adjacentIndex], depths)
+                    depths[adjacentIndex] = depths[vertex.index] + edge.length
+                    queue.Enqueue(self.vertices[adjacentIndex], depths)
+                elif(depths[adjacentIndex] > depths[vertex.index] + edge.length):
+                    depths[adjacentIndex] = depths[vertex.index] + edge.length
+                    queue.Enqueue(self.vertices[adjacentIndex], depths)
         
         path = []
-        current = self.nodes[indexOfDestination]
-        while(current != self.nodes[indexOfStart]):
-            for adjacentIndex in current.adjacentVerticesAndDistances:
-                if(depths[adjacentIndex] == depths[current.index] - current.adjacentVerticesAndDistances[adjacentIndex]):
+        current = self.vertices[indexOfDestination]
+        while(current != self.vertices[indexOfStart]):
+            for edge in current.edges:
+                adjacentIndex = edge.TheIndexOfTheOtherVertex(current.index)
+                if(depths[adjacentIndex] == depths[current.index] - edge.length):
                     path.append(current.index)
-                    current = self.nodes[adjacentIndex]
+                    current = self.vertices[adjacentIndex]
                     break
         path.append(current.index)
         path.reverse()
@@ -197,7 +220,7 @@ class GenericGraph:
     def TopologicalSort(self):
         pass
 
-    def Kruskal(self): #Returns a set of edges of the minimum spanning tree
+    def Kruskal(self): #Returns a set of edges of the minimum spanning tree and the total length of the tree
         edgesResult = []
         subtrees = []
         alreadyInSubtree = []
@@ -231,8 +254,27 @@ class GenericGraph:
 
         return edgesResult
 
-    def Jarnik(self): #Returns a set of edges of the minimum spanning tree in format: vertex1Index vertex2Index length
-        pass
+    def Jarnik(self): #Returns a set of edges of the minimum spanning tree and the total length of the tree
+        edgesResult = []
+        edgesToTry = PriorityQueueShortestEdges()
+        verticesInTheSpanningTreeByIndex = [self.vertices[0]]
+        for edge in self.vertices[0].edges:
+            edgesToTry.Enqueue(edge)
+
+        while(len(verticesInTheSpanningTreeByIndex) != len(self.vertices)):
+            edgeToTry = edgesToTry.Dequeue()
+            if(edgeToTry.vertex1 not in verticesInTheSpanningTreeByIndex):
+                edgesResult.append(edgeToTry)
+                verticesInTheSpanningTreeByIndex.append(edgeToTry.vertex1)               
+                for edge in self.vertices[edgeToTry.vertex1].edges:
+                    edgesToTry.Enqueue(edge)
+            elif(edgeToTry.vertex2 not in verticesInTheSpanningTreeByIndex):
+                edgesResult.append(edgeToTry)
+                verticesInTheSpanningTreeByIndex.append(edgeToTry.vertex2)
+                for edge in self.vertices[edgeToTry.vertex2].edges:
+                    edgesToTry.Enqueue(edge)
+
+        return edgesResult
 
     def Boruvka(self):
         pass
@@ -241,13 +283,15 @@ genericGraph = GenericGraph()
 genericGraph.CreateGraph("GenericInput.txt")
 #PrintGraph(genericGraph)
 
-# length, path = genericGraph.Dijkstra(0, 7)
-# print(length)
-# print(path)
+# length, path = genericGraph.Dijkstra(7,2)
+# print("From 7 to 2 the length is: "+str(length))
+# print("Path: "+str(path))
 
-# edges = genericGraph.Kruskal()
-# for edge in edges:
-#     print("from "+str(edge.vertex1)+" to "+str(edge.vertex2)+", length: "+str(edge.length))
+kruskalEdges = genericGraph.Kruskal()
+PrintResultOfMinimumSpanningTree(kruskalEdges, "Kruskal")
 
-genericGraph.Jarnik()
+jarnikEdges = genericGraph.Jarnik()
+PrintResultOfMinimumSpanningTree(jarnikEdges, "Jarnik")
+
+
 
