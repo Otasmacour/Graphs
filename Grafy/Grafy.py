@@ -15,11 +15,19 @@ def ShortestEdge(edges):
     return shortest    
 
 def PrintGraph(graph):
-    for vertex in graph.edges:
+    if(not graph.directedYesOrNot):
+        print("This graph is not directed")
+    else:
+        print("This graph is directed")
+    for vertex in graph.vertices:
         print("Vertex "+str(vertex.index))
-        for key in vertex.adjacentVerticesAndDistances: 
-            print("To "+str(key)+", length:"+str(vertex.adjacentVerticesAndDistances[key]))
-
+        for edge in vertex.edges:
+            print("To "+str(edge.TheIndexOfTheOtherVertex(vertex.index))+", length:"+str(edge.length))
+        if(graph.directedYesOrNot):
+            print("The edges, that come to vertex "+str(vertex.index)+":")
+            for edge in vertex.edgesThatComeToIt:
+                print("From "+str(edge.TheIndexOfTheOtherVertex(vertex.index))+", length:"+str(edge.length))
+        print()
 def NextDecimalNumber(string):
     result = 0
     index = 0
@@ -151,22 +159,25 @@ class Vertex():
     def __init__(self, index):
         self.index = index
         self.edges = []
+        self.edgesThatComeToIt = []
     
     def ShortestEdge(self):
-        return ShortestEdge(self.edges)
+        return ShortestEdge(self.edges+self.edgesThatComeToIt)
 
 class Edge():
-    
-    def __init__(self, vertex1, vertex2, length): #These vertices are their indices
-        self.vertex1 = vertex1
-        self.vertex2 = vertex2
+    def __init__(self, vertex1, vertex2, length, directed=False):  # Přidán parametr directed
+        self.vertex1 = vertex1  # Začátek hrany (pro orientovaný graf)
+        self.vertex2 = vertex2  # Konec hrany (pro orientovaný graf)
         self.length = length
+        self.directed = directed  # Určuje, zda je hrana orientovaná
 
     def TheIndexOfTheOtherVertex(self, vertex):
-        if(self.vertex1 == vertex):
+        # Pro orientovaný graf je nutné vracet druhý vrchol pouze u neorientovaných hran
+        if self.vertex1 == vertex:
             return self.vertex2
         else:
             return self.vertex1
+
 
 class BipartGraph:
 
@@ -181,10 +192,10 @@ class GenericGraph:
     def __init__(self):
         self.vertices = []
         self.edges = PriorityQueueShortestEdges()
+        self.directedYesOrNot = False
 
-    def CreateGraph(self, inputFileName):
-        lines = open("GenericInput.txt")
-        lines = lines.read()
+    def CreateGraph(self, inputFileName, directed=False):
+        lines = open(inputFileName).read()
         numberOfVertices, lines = NextDecimalNumber(lines)
         for i in range(numberOfVertices):
             node = Vertex(i)
@@ -194,12 +205,16 @@ class GenericGraph:
             vertex1Index, lines = NextDecimalNumber(lines)
             vertex2Index, lines = NextDecimalNumber(lines)
             edgeLength, lines = NextDecimalNumber(lines)
-            edge = Edge(vertex1Index, vertex2Index, edgeLength)
+            edge = Edge(vertex1Index, vertex2Index, edgeLength, directed)
             self.vertices[vertex1Index].edges.append(edge)
-            self.vertices[vertex2Index].edges.append(edge)
+            if not directed:
+                self.vertices[vertex2Index].edges.append(edge)
+            else:
+                self.vertices[vertex2Index].edgesThatComeToIt.append(edge)
             self.edges.Enqueue(edge)
+            self.directedYesOrNot = directed
 
-    def Dijkstra(self, indexOfStart, indexOfDestination): #Returns the length and vertices of the shortest path
+    def Dijkstra(self, indexOfStart, indexOfDestination): #Returns if the path even exists, the length and vertices of the shortest path
         queue = PriorityQueueByDepths()
         depths = {indexOfStart:0}
         queue.Enqueue(self.vertices[indexOfStart], depths)
@@ -213,19 +228,32 @@ class GenericGraph:
                 elif(depths[adjacentIndex] > depths[vertex.index] + edge.length):
                     depths[adjacentIndex] = depths[vertex.index] + edge.length
                     queue.Enqueue(self.vertices[adjacentIndex], depths)
-        
+
+        if(indexOfDestination not in depths):
+            return False, None, None
+
         path = []
         current = self.vertices[indexOfDestination]
-        while(current != self.vertices[indexOfStart]):
-            for edge in current.edges:
-                adjacentIndex = edge.TheIndexOfTheOtherVertex(current.index)
-                if(depths[adjacentIndex] == depths[current.index] - edge.length):
-                    path.append(current.index)
-                    current = self.vertices[adjacentIndex]
-                    break
+        if(self.directedYesOrNot):
+            while(current != self.vertices[indexOfStart]):
+                for edge in current.edgesThatComeToIt:
+                    adjacentIndex = edge.TheIndexOfTheOtherVertex(current.index)
+                    if(depths[adjacentIndex] == depths[current.index] - edge.length):
+                        path.append(current.index)
+                        current = self.vertices[adjacentIndex]
+                        break
+
+        else:
+            while(current != self.vertices[indexOfStart]):
+                for edge in current.edges:
+                    adjacentIndex = edge.TheIndexOfTheOtherVertex(current.index)
+                    if(depths[adjacentIndex] == depths[current.index] - edge.length):
+                        path.append(current.index)
+                        current = self.vertices[adjacentIndex]
+                        break
         path.append(current.index)
         path.reverse()
-        return depths[indexOfDestination], path
+        return True, depths[indexOfDestination], path
 
     def TopologicalSort(self):
         pass
@@ -265,6 +293,8 @@ class GenericGraph:
         verticesInTheSpanningTreeByIndex = {self.vertices[0]}
         for edge in self.vertices[0].edges:
             edgesToTry.Enqueue(edge)
+        for edge in self.vertices[0].edgesThatComeToIt:
+            edgesToTry.Enqueue(edge)
 
         while(len(verticesInTheSpanningTreeByIndex) != len(self.vertices)):
             edgeToTry = edgesToTry.Dequeue()
@@ -273,10 +303,14 @@ class GenericGraph:
                 verticesInTheSpanningTreeByIndex.add(edgeToTry.vertex1)               
                 for edge in self.vertices[edgeToTry.vertex1].edges:
                     edgesToTry.Enqueue(edge)
+                for edge in self.vertices[edgeToTry.vertex1].edgesThatComeToIt:
+                    edgesToTry.Enqueue(edge)
             elif(edgeToTry.vertex2 not in verticesInTheSpanningTreeByIndex):
                 edgesResult.append(edgeToTry)
                 verticesInTheSpanningTreeByIndex.add(edgeToTry.vertex2)
                 for edge in self.vertices[edgeToTry.vertex2].edges:
+                    edgesToTry.Enqueue(edge)
+                for edge in self.vertices[edgeToTry.vertex2].edgesThatComeToIt:
                     edgesToTry.Enqueue(edge)
 
         return edgesResult
@@ -297,10 +331,7 @@ class GenericGraph:
                 subtreesOfVertices[otherVertex] = newSubtree
                 verticesOfsubtrees.append([vertex.index, otherVertex])
                 edgesToTryOfSubtrees.append(PriorityQueueShortestEdges())
-                for edge in vertex.edges:
-                    if(edge != shortestEdge):
-                        edgesToTryOfSubtrees[newSubtree].Enqueue(edge)
-                for edge in self.vertices[otherVertex].edges:
+                for edge in vertex.edges+vertex.edgesThatComeToIt+self.vertices[otherVertex].edges+self.vertices[otherVertex].edgesThatComeToIt:
                     if(edge != shortestEdge):
                         edgesToTryOfSubtrees[newSubtree].Enqueue(edge)
             elif((vertex.index not in subtreesOfVertices and otherVertex in subtreesOfVertices) or (vertex.index in subtreesOfVertices and otherVertex not in subtreesOfVertices)):    
@@ -311,7 +342,7 @@ class GenericGraph:
                     notThere = vertex
                 subtreesOfVertices[notThere.index] = subtreesOfVertices[isThere.index]
                 verticesOfsubtrees[subtreesOfVertices[isThere.index]].append(notThere.index)
-                for edge in notThere.edges:
+                for edge in notThere.edges+notThere.edgesThatComeToIt:
                     if(edge != shortestEdge):
                         edgesToTryOfSubtrees[subtreesOfVertices[isThere.index]].Enqueue(edge)
             elif(vertex.index in subtreesOfVertices and otherVertex in subtreesOfVertices and subtreesOfVertices[vertex.index]!=subtreesOfVertices[otherVertex]):
@@ -324,9 +355,7 @@ class GenericGraph:
                 verticesOfsubtrees[oldSubtree].clear()
                 while(edgesToTryOfSubtrees[oldSubtree].NotEmpty()):
                     edge = edgesToTryOfSubtrees[oldSubtree].Dequeue()
-                    if(edge.vertex1 != vertex or edge.vertex1 != otherVertex or edge.vertex2 != vertex or edge.vertex2 != otherVertex):
-                        #Cutting of edges, that connect two vertices of the newSubtree (those won't be used anymore)
-                        edgesToTryOfSubtrees[newSubtree].Enqueue(edgesToTryOfSubtrees[oldSubtree].Dequeue())
+                    edgesToTryOfSubtrees[newSubtree].Enqueue(edge)
         #Second part, until there is only one subtree (minimum spanning tree in this case), pick one not empty subtree, find the shortest edge, that is coming from it and connect that subtree with another one, that is connect to it by the edge
         while(len(edgesResult)!=len(self.vertices)-1):
             indexOfSubtree = 0
@@ -370,12 +399,16 @@ class GenericGraph:
         #     print("from "+str(edge.vertex1)+" to "+str(edge.vertex2)+", length: "+str(edge.length))
                 
 genericGraph = GenericGraph()
-genericGraph.CreateGraph("GenericInput.txt")
-#PrintGraph(genericGraph)
+genericGraph.CreateGraph("GenericInput.txt", True)
+# PrintGraph(genericGraph)
 
-# length, path = genericGraph.Dijkstra(7,2)
-# print("From 7 to 2 the length is: "+str(length))
-# print("Path: "+str(path))
+# start, destination = 0, 7
+# pathExists, length, path = genericGraph.Dijkstra(start, destination)
+# if(pathExists):
+#     print("From "+str(start)+" to "+str(destination)+" the length is: "+str(length))
+#     print("Path: "+str(path))
+# else:
+#     print("Unfortunately, path from "+str(start)+" to "+str(destination)+" doesn't exist")
 
 # kruskalEdges = genericGraph.Kruskal()
 # PrintResultOfMinimumSpanningTree(kruskalEdges, "Kruskal")
