@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>e5fecd02-66aa-419e-87ac-ecaf8dd5b8e8</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Grafy.py</StartupFile>
+    <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -21,11 +21,30 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Grafy.py" />
+    <Compile Include="BipartiteGraph.py" />
+    <Compile Include="GenericGraph.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="GraphParts.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LinkedLists.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="main.py" />
+    <Compile Include="OtherFunctions.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ResultPrinting.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="GenericCycleThereInput.txt" />
-    <Content Include="GenericNotCycleInput.txt" />
+    <Content Include="Inputs\GenericCycleThereInput.txt" />
+    <Content Include="Inputs\GenericNotCycleInput.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Inputs\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
