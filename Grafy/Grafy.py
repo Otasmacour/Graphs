@@ -1,6 +1,22 @@
+def PrintResultOfDijkstra(start, destination, pathExists, length, path):
+    if(pathExists):
+        print("From "+str(start)+" to "+str(destination)+" the length is: "+str(length))
+        print("Path: "+str(path))
+    else:
+        print("Unfortunately, path from "+str(start)+" to "+str(destination)+" doesn't exist")
+
+
+def PrintTopologicalOrdering(itExists, stack):
+    if(itExists):
+        print("One of the possible topological ordering looks like this:")
+        while(stack.NotEmpty()):
+            print(str(stack.Pop()), end=' ')
+    else:
+        print("There is no topological ordering for this graph, there has to be cycle somewhere there")
+
 def PrintResultOfMinimumSpanningTree(edges, algorithmName):
     totalLength = 0
-    print("The edges of the minimum spanning tree by "+algorithmName+" are:")
+    print("The edges of one of the possible minimum spanning trees by "+algorithmName+" are:")
     for edge in edges:
         print("from "+str(edge.vertex1)+" to "+str(edge.vertex2)+", length: "+str(edge.length))
         totalLength += edge.length
@@ -38,10 +54,34 @@ def NextDecimalNumber(string):
         index += 1
     return result, string[index+1:len(string)]
 
-class QueueNode():
+class LinkedListNode():
     def __init__(self):
         self.next = None
         self.value = None
+
+class Stack():
+
+    def __init__(self):
+        self.peek = None
+
+    def NotEmpty(self):
+        if(self.peek != None):
+            return True
+        return False
+
+    def Push(self, value):
+        node  = LinkedListNode()
+        node.value = value
+        if(self.peek == None):
+            self.peek = node
+        else:
+            node.next = self.peek
+            self.peek = node
+
+    def Pop(self):
+        result = self.peek.value
+        self.peek = self.peek.next
+        return result
 
 class PriorityQueueByDepths():
 
@@ -55,7 +95,7 @@ class PriorityQueueByDepths():
         return False
      
     def Enqueue(self, value, depths):
-        node = QueueNode()
+        node = LinkedListNode()
         node.value = value
         if(self.start == None):
             self.start = node
@@ -107,7 +147,7 @@ class PriorityQueueShortestEdges():
         return False
     
     def Enqueue(self, value):
-        node = QueueNode()
+        node = LinkedListNode()
         node.value = value
         if(self.start == None):
             self.start = node
@@ -165,14 +205,14 @@ class Vertex():
         return ShortestEdge(self.edges+self.edgesThatComeToIt)
 
 class Edge():
-    def __init__(self, vertex1, vertex2, length, directed=False):  # Přidán parametr directed
-        self.vertex1 = vertex1  # Začátek hrany (pro orientovaný graf)
-        self.vertex2 = vertex2  # Konec hrany (pro orientovaný graf)
+
+    def __init__(self, vertex1, vertex2, length, directed=False):  
+        self.vertex1 = vertex1  
+        self.vertex2 = vertex2  
         self.length = length
-        self.directed = directed  # Určuje, zda je hrana orientovaná
+        self.directed = directed 
 
     def TheIndexOfTheOtherVertex(self, vertex):
-        # Pro orientovaný graf je nutné vracet druhý vrchol pouze u neorientovaných hran
         if self.vertex1 == vertex:
             return self.vertex2
         else:
@@ -214,7 +254,7 @@ class GenericGraph:
             self.edges.Enqueue(edge)
             self.directedYesOrNot = directed
 
-    def Dijkstra(self, indexOfStart, indexOfDestination): #Returns if the path even exists, the length and vertices of the shortest path
+    def Dijkstra(self, indexOfStart, indexOfDestination): #Returns if the path even exists, the length and the vertices of the shortest path
         queue = PriorityQueueByDepths()
         depths = {indexOfStart:0}
         queue.Enqueue(self.vertices[indexOfStart], depths)
@@ -238,10 +278,11 @@ class GenericGraph:
             while(current != self.vertices[indexOfStart]):
                 for edge in current.edgesThatComeToIt:
                     adjacentIndex = edge.TheIndexOfTheOtherVertex(current.index)
-                    if(depths[adjacentIndex] == depths[current.index] - edge.length):
-                        path.append(current.index)
-                        current = self.vertices[adjacentIndex]
-                        break
+                    if(adjacentIndex in depths):
+                        if(depths[adjacentIndex] == depths[current.index] - edge.length):
+                            path.append(current.index)
+                            current = self.vertices[adjacentIndex]
+                            break
 
         else:
             while(current != self.vertices[indexOfStart]):
@@ -255,8 +296,44 @@ class GenericGraph:
         path.reverse()
         return True, depths[indexOfDestination], path
 
-    def TopologicalSort(self):
-        pass
+    def TopologicalSort(self): #Returns if the graph even has a topological ordering and a stack of the topological ordering
+        def IsThereACycle():
+            alreadyThere = []
+            start = self.vertices[0]
+            vertices =[start]
+            alreadyThere = [start.index]
+            while(vertices != []):
+                vertex = vertices.pop()
+                for edge in vertex.edges:
+                    adjacentVertexIndex = edge.TheIndexOfTheOtherVertex(vertex.index)
+                    if(adjacentVertexIndex not in alreadyThere):
+                        alreadyThere.append(adjacentVertexIndex)
+                        vertices.append(self.vertices[adjacentVertexIndex])
+                    else:
+                        return True
+            return False
+
+        def AddItToTopologicalOrdering(vertex):
+            for edge in self.vertices[vertex].edges:
+                adjacentVertexIndex = edge.TheIndexOfTheOtherVertex(vertex)
+                if(adjacentVertexIndex in verticesNotThere):
+                    AddItToTopologicalOrdering(adjacentVertexIndex)
+            if(vertex in verticesNotThere):
+                verticesNotThere.remove(vertex)
+            result.Push(vertex)
+        
+        if(IsThereACycle()):
+            return False, None
+
+        result = Stack()
+        verticesNotThere = set()
+        for i in range(len(self.vertices)):
+            verticesNotThere.add(self.vertices[i].index)
+        while(len(verticesNotThere) != 0):
+            vertex = verticesNotThere.pop()
+            AddItToTopologicalOrdering(vertex)
+
+        return True, result
 
     def Kruskal(self): #Returns a list of edges of the minimum spanning tree
         edgesResult = []
@@ -382,33 +459,14 @@ class GenericGraph:
                         edgesToTryOfSubtrees[NewSubtree].Enqueue(edgesToTryOfSubtrees[OldSubtree].Dequeue())
         return edgesResult
 
-        # print(verticesOfsubtrees)
-        # print("Subtrees:")
-        # for vertex in subtreesOfVertices:
-        #     print(str(vertex)+" in "+str(subtreesOfVertices[vertex]))
-        # print()
-        # print("Edges in:")
-        # for edge in edgesResult:
-        #     print("from "+str(edge.vertex1)+" to "+str(edge.vertex2)+", length: "+str(edge.length))
-        # for i in range(len(edgesToTryOfSubtrees)):
-        #     print("Edges to try of the subtree "+str(i)+':')
-        #     while(edgesToTryOfSubtrees[i].NotEmpty()):
-        #         edge = edgesToTryOfSubtrees[i].Dequeue()
-        #         print("from "+str(edge.vertex1)+" to "+str(edge.vertex2)+", length: "+str(edge.length))
-        # for edge in edgesResult:
-        #     print("from "+str(edge.vertex1)+" to "+str(edge.vertex2)+", length: "+str(edge.length))
-                
-genericGraph = GenericGraph()
-genericGraph.CreateGraph("GenericInput.txt", True)
+# ------------------------Test samples number 1:------------------------        
+# genericGraph = GenericGraph()
+# genericGraph.CreateGraph("GenericNotCycleInput.txt", True)
 # PrintGraph(genericGraph)
 
 # start, destination = 0, 7
 # pathExists, length, path = genericGraph.Dijkstra(start, destination)
-# if(pathExists):
-#     print("From "+str(start)+" to "+str(destination)+" the length is: "+str(length))
-#     print("Path: "+str(path))
-# else:
-#     print("Unfortunately, path from "+str(start)+" to "+str(destination)+" doesn't exist")
+# PrintResultOfDijkstra(start, destination, pathExists, length, path)
 
 # kruskalEdges = genericGraph.Kruskal()
 # PrintResultOfMinimumSpanningTree(kruskalEdges, "Kruskal")
@@ -418,3 +476,27 @@ genericGraph.CreateGraph("GenericInput.txt", True)
 
 # boruvkaEdges = genericGraph.Boruvka()
 # PrintResultOfMinimumSpanningTree(boruvkaEdges, "Boruvka")
+
+# itExists, stackTopologicalOrdering = genericGraph.TopologicalSort()
+# PrintTopologicalOrdering(itExists, stackTopologicalOrdering)
+
+# ------------------------Test samples number 2:------------------------
+# genericGraphWithCycle = GenericGraph()
+# genericGraphWithCycle.CreateGraph("GenericCycleThereInput.txt", True)
+# PrintGraph(genericGraph)
+
+# start, destination = 0, 5
+# pathExists, length, path = genericGraphWithCycle.Dijkstra(start, destination)
+# PrintResultOfDijkstra(start, destination, pathExists, length, path)
+
+# kruskalEdges = genericGraphWithCycle.Kruskal()
+# PrintResultOfMinimumSpanningTree(kruskalEdges, "Kruskal")
+
+# jarnikEdges = genericGraphWithCycle.Jarnik()
+# PrintResultOfMinimumSpanningTree(jarnikEdges, "Jarnik")
+
+# boruvkaEdges = genericGraphWithCycle.Boruvka()
+# PrintResultOfMinimumSpanningTree(boruvkaEdges, "Boruvka")
+
+# itExists, stackTopologicalOrdering = genericGraphWithCycle.TopologicalSort()
+# PrintTopologicalOrdering(itExists, stackTopologicalOrdering)
