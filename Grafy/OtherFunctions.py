@@ -5,7 +5,6 @@ def ShortestEdge(edges):
             shortest = edge
     return shortest    
 
-
 def NextDecimalNumber(string):
     result = 0
     index = 0

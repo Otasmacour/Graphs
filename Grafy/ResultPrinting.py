@@ -1,4 +1,4 @@
-def PrintGraph(graph):
+def PrintGenericGraph(graph):
     if(not graph.directedYesOrNot):
         print("This graph is not directed")
     else:
@@ -11,6 +11,13 @@ def PrintGraph(graph):
             print("The edges, that come to vertex "+str(vertex.index)+":")
             for edge in vertex.edgesThatComeToIt:
                 print("From "+str(edge.TheIndexOfTheOtherVertex(vertex.index))+", length:"+str(edge.length))
+        print()
+
+def PrintBipartiteGraph(bipartiteGraph):
+    for leftVertex in bipartiteGraph.leftVertices:
+        print("From left "+str(leftVertex.index)+" to right vertices:")
+        for edge in leftVertex.edges:
+            print(edge.TheIndexOfTheOtherVertex(leftVertex.index))
         print()
 
 def PrintResultOfDijkstra(start, destination, pathExists, length, path):
@@ -37,3 +44,7 @@ def PrintResultOfMinimumSpanningTree(edges, algorithmName):
     print("With a total length of "+str(totalLength))
     print()
 
+def PrintingResultOfTheHopcroftKarp(edges):
+    print("Edges, that form the maximal pairing in the given graph:")
+    for edge in edges:
+        print("From "+str(edge.vertex1)+" to "+str(edge.vertex2))

@@ -66,10 +66,11 @@ class GenericGraph:
             while(current != self.vertices[indexOfStart]):
                 for edge in current.edges:
                     adjacentIndex = edge.TheIndexOfTheOtherVertex(current.index)
-                    if(depths[adjacentIndex] == depths[current.index] - edge.length):
-                        path.append(current.index)
-                        current = self.vertices[adjacentIndex]
-                        break
+                    if(adjacentIndex in depths):
+                        if(depths[adjacentIndex] == depths[current.index] - edge.length):
+                            path.append(current.index)
+                            current = self.vertices[adjacentIndex]
+                            break
         path.append(current.index)
         path.reverse()
         return True, depths[indexOfDestination], path

@@ -1,3 +1,4 @@
+from math import fabs
 from OtherFunctions import ShortestEdge
 
 class Vertex():
@@ -6,6 +7,7 @@ class Vertex():
         self.index = index
         self.edges = []
         self.edgesThatComeToIt = []
+        self.leftYesOrNot = False
     
     def ShortestEdge(self):
         return ShortestEdge(self.edges+self.edgesThatComeToIt)

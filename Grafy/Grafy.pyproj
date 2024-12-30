@@ -42,6 +42,7 @@
   <ItemGroup>
     <Content Include="Inputs\GenericCycleThereInput.txt" />
     <Content Include="Inputs\GenericNotCycleInput.txt" />
+    <Content Include="Inputs\BipartiteInput.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Inputs\" />
