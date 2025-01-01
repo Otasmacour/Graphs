@@ -68,22 +68,40 @@ class BipartiteGraph:
                             notFound = False
                             break
                 if(not notFound):
-                    rightNotThereIndices.remove(indexOfFoundRight)
-                    leftNotThereIndices.remove(leftStart)
+                    #Now i have to chech, if it is really an augment path by increasing len edgesOn by 1 in total
+                    increaseRatio = 0
                     current = self.rightVertices[indexOfFoundRight]
                     while(current != self.leftVertices[leftStart]):
                         for edge in current.edges:
-                            adjacentIndex = edge.TheIndexOfTheOtherVertex(current.index)
-                            if(adjacentIndex in depthsByIndices):
-                                if(depthsByIndices[adjacentIndex] == depthsByIndices[current.index] - 1):
-                                    if(current.index > len(self.leftVertices) - 1): #current is now right
-                                        current = self.leftVertices[adjacentIndex]
-                                    else: #current is now left
-                                         current = self.rightVertices[adjacentIndex]
-                                    if(edge in edgesOn):
-                                        edgesOn.remove(edge)
-                                    else:
-                                        edgesOn.add(edge)
-                                    break
-                    break #from the for cycle
+                                adjacentIndex = edge.TheIndexOfTheOtherVertex(current.index)
+                                if(adjacentIndex in depthsByIndices):
+                                    if(depthsByIndices[adjacentIndex] == depthsByIndices[current.index] - 1):
+                                        if(current.index > len(self.leftVertices) - 1): #current is now right
+                                            current = self.leftVertices[adjacentIndex]
+                                        else: #current is now left
+                                             current = self.rightVertices[adjacentIndex]
+                                        if(edge in edgesOn):
+                                            increaseRatio -= 1
+                                        else:
+                                            increaseRatio += 1
+                                        break
+                    if(increaseRatio == 1):
+                        rightNotThereIndices.remove(indexOfFoundRight)
+                        leftNotThereIndices.remove(leftStart)
+                        current = self.rightVertices[indexOfFoundRight]
+                        while(current != self.leftVertices[leftStart]):
+                            for edge in current.edges:
+                                adjacentIndex = edge.TheIndexOfTheOtherVertex(current.index)
+                                if(adjacentIndex in depthsByIndices):
+                                    if(depthsByIndices[adjacentIndex] == depthsByIndices[current.index] - 1):
+                                        if(current.index > len(self.leftVertices) - 1): #current is now right
+                                            current = self.leftVertices[adjacentIndex]
+                                        else: #current is now left
+                                             current = self.rightVertices[adjacentIndex]
+                                        if(edge in edgesOn):
+                                            edgesOn.remove(edge)
+                                        else:
+                                            edgesOn.add(edge)
+                                        break
+                        break #from the for cycle
         return edgesOn

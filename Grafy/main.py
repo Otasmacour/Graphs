@@ -43,9 +43,14 @@ from ResultPrinting import (PrintGenericGraph, PrintBipartiteGraph, PrintResultO
 # PrintTopologicalOrdering(itExists, stackTopologicalOrdering)
 
 # ------------------------Test samples number 3:------------------------
-bipartiteGraph = BipartiteGraph()
-bipartiteGraph.CreateGraph("BipartiteInput.txt")
-#PrintBipartiteGraph(bipartiteGraph)
+# bipartiteGraph1 = BipartiteGraph()
+# bipartiteGraph1.CreateGraph("BipartiteInput.txt")
 
-edges = bipartiteGraph.HopcroftKarp()
+# edges = bipartiteGraph1.HopcroftKarp()
+# PrintingResultOfTheHopcroftKarp(edges)
+
+bipartiteGraph2 = BipartiteGraph()
+bipartiteGraph2.CreateGraph("BipartiteInput2.txt")
+
+edges = bipartiteGraph2.HopcroftKarp()
 PrintingResultOfTheHopcroftKarp(edges)

@@ -40,9 +40,11 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Inputs\BipartiteInput2.txt" />
     <Content Include="Inputs\GenericCycleThereInput.txt" />
     <Content Include="Inputs\GenericNotCycleInput.txt" />
     <Content Include="Inputs\BipartiteInput.txt" />
+    <Content Include="Inputs\vstup.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Inputs\" />
